@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title> Companion </title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f5f0e8;
+    --warm-white: #faf8f4;
+    --ink: #1a1714;
+    --muted: #7a6f65;
+    --accent: #c4603a;
+    --accent-light: #e8b89e;
+    --surface: #ede8df;
+    --border: #d6cfc4;
+    --bubble-user: #1a1714;
+    --bubble-ai: #ffffff;
+    --ended-bg: #f0ebe0;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Fraunces', Georgia, serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── Header ── */
+  header {
+    width: 100%;
+    max-width: 720px;
+    padding: 2.5rem 1.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .title { font-size: 1.75rem; font-weight: 300; letter-spacing: -0.03em; line-height: 1.1; }
+  .title em { font-style: italic; color: var(--accent); }
+  .subtitle { font-size: 0.78rem; font-family: 'DM Mono', monospace; color: var(--muted);
+    letter-spacing: 0.05em; text-transform: uppercase; margin-top: 0.5rem; }
+
+  /* ── Model selector ── */
+  .model-bar {
+    width: 100%; max-width: 720px;
+    padding: 0 1.5rem 1rem;
+    display: flex; align-items: center; gap: 1rem;
+  }
+  .model-label { font-family: 'DM Mono', monospace; font-size: 0.72rem;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .toggle-group { display: flex; border: 1px solid var(--border); border-radius: 100px; overflow: hidden; }
+  .toggle-btn {
+    padding: 0.35rem 1rem; font-family: 'DM Mono', monospace; font-size: 0.72rem;
+    letter-spacing: 0.04em; background: transparent; border: none; cursor: pointer;
+    color: var(--muted); transition: all 0.2s;
+  }
+  .toggle-btn.active { background: var(--ink); color: var(--cream); }
+
+  /* ── Chat window ── */
+  .chat-wrap {
+    width: 100%; max-width: 720px;
+    padding: 0 1.5rem;
+    flex: 1;
+    display: flex; flex-direction: column;
+  }
+  #chat-window {
+    flex: 1;
+    min-height: 380px;
+    max-height: 55vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    padding: 1.5rem 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  /* ── Messages ── */
+  .msg { display: flex; flex-direction: column; max-width: 80%; animation: fadeUp 0.3s ease; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .msg.ai   { align-self: flex-start; align-items: flex-start; }
+
+  .bubble {
+    padding: 0.85rem 1.1rem;
+    border-radius: 1.2rem;
+    font-size: 1rem;
+    line-height: 1.6;
+    font-weight: 300;
+  }
+  .msg.user .bubble {
+    background: var(--bubble-user); color: var(--cream);
+    border-bottom-right-radius: 0.3rem;
+  }
+  .msg.ai .bubble {
+    background: var(--bubble-ai); color: var(--ink);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 0.3rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .turn-label {
+    font-family: 'DM Mono', monospace; font-size: 0.65rem;
+    color: var(--muted); margin-bottom: 0.3rem; letter-spacing: 0.04em;
+  }
+
+  /* ── Ended state ── */
+  .ended-banner {
+    display: none;
+    background: var(--ended-bg);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    text-align: center;
+    animation: fadeUp 0.4s ease;
+  }
+  .ended-banner.visible { display: block; }
+  .ended-banner h3 { font-size: 1.05rem; font-weight: 400; margin-bottom: 0.35rem; }
+  .ended-banner p { font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--muted); }
+  .ended-banner .stats { display: flex; justify-content: center; gap: 2rem; margin-top: 0.8rem; }
+  .stat { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
+  .stat-val { font-size: 1.5rem; font-weight: 300; color: var(--accent); }
+  .stat-label { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--muted); text-transform: uppercase; }
+
+  /* ── Typing indicator ── */
+  .typing { display: none; align-self: flex-start; }
+  .typing.visible { display: flex; }
+  .typing .bubble { display: flex; align-items: center; gap: 4px; padding: 0.8rem 1rem; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted);
+    animation: bounce 1.2s infinite; }
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-5px); }
+  }
+
+  /* ── Input area ── */
+  .input-area {
+    padding: 1rem 0 2rem;
+    display: flex; gap: 0.75rem; align-items: flex-end;
+  }
+  #user-input {
+    flex: 1;
+    padding: 0.85rem 1.1rem;
+    border: 1px solid var(--border);
+    border-radius: 1.2rem;
+    background: var(--warm-white);
+    font-family: 'Fraunces', serif;
+    font-size: 1rem;
+    font-weight: 300;
+    color: var(--ink);
+    resize: none;
+    outline: none;
+    line-height: 1.5;
+    transition: border-color 0.2s;
+    min-height: 52px; max-height: 140px;
+  }
+  #user-input:focus { border-color: var(--accent); }
+  #user-input:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  #send-btn {
+    width: 48px; height: 48px;
+    border-radius: 50%; border: none;
+    background: var(--ink); color: var(--cream);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, transform 0.1s;
+    flex-shrink: 0;
+  }
+  #send-btn:hover { background: var(--accent); }
+  #send-btn:active { transform: scale(0.94); }
+  #send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  #restart-btn {
+    font-family: 'DM Mono', monospace; font-size: 0.72rem;
+    letter-spacing: 0.04em; padding: 0.5rem 1.2rem;
+    border: 1px solid var(--border); border-radius: 100px;
+    background: transparent; color: var(--muted);
+    cursor: pointer; transition: all 0.2s; display: none;
+  }
+  #restart-btn.visible { display: inline-flex; align-items: center; gap: 0.4rem; }
+  #restart-btn:hover { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+
+  /* ── Research note ── */
+  .research-note {
+    width: 100%; max-width: 720px;
+    padding: 0 1.5rem 1.5rem;
+    font-family: 'DM Mono', monospace; font-size: 0.68rem;
+    color: var(--muted); line-height: 1.6;
+  }
+  .research-note span { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div>
+      <div class="title">AI <em>Companion</em></div>
+      <div class="subtitle">Conversation Ending Research</div>
+    </div>
+  </div>
+</header>
+
+<div class="model-bar">
+  <span class="model-label">Model</span>
+  <div class="toggle-group">
+    <button class="toggle-btn active" data-model="finetuned">Fine-tuned</button>
+    <button class="toggle-btn" data-model="base">Base</button>
+  </div>
+  <span class="model-label" id="session-label" style="margin-left:auto"></span>
+</div>
+
+<div class="chat-wrap">
+  <div id="chat-window">
+    <!-- messages injected here -->
+    <div class="typing" id="typing">
+      <div class="bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    </div>
+  </div>
+
+  <div class="ended-banner" id="ended-banner">
+    <h3>Conversation ended naturally ✦</h3>
+    <p>The model detected a closing moment and gracefully concluded.</p>
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-val" id="stat-turns">—</span>
+        <span class="stat-label">Turns</span>
+      </div>
+      <div class="stat">
+        <span class="stat-val" id="stat-model">—</span>
+        <span class="stat-label">Model</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="input-area">
+    <textarea id="user-input" rows="1" placeholder="Say something…"></textarea>
+    <button id="send-btn" title="Send">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"></line>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+      </svg>
+    </button>
+    <button id="restart-btn">↺ New conversation</button>
+  </div>
+</div>
+
+<div class="research-note">
+  <span>Research note:</span> This interface is part of a study on graceful conversation ending in LLMs.
+  Sessions are logged anonymously for analysis. Model: <span id="active-model-label">fine-tuned</span>.
+</div>
+
+<script>
+const API = "";
+let sessionId = null;
+let turnCount = 0;
+let modelType = "finetuned";
+let ended = false;
+
+const chatWindow = document.getElementById("chat-window");
+const typingEl   = document.getElementById("typing");
+const input      = document.getElementById("user-input");
+const sendBtn    = document.getElementById("send-btn");
+const restartBtn = document.getElementById("restart-btn");
+const endedBanner = document.getElementById("ended-banner");
+const sessionLabel = document.getElementById("session-label");
+const activeModelLabel = document.getElementById("active-model-label");
+
+// ── Model toggle ──────────────────────────────────────────────────────────────
+document.querySelectorAll(".toggle-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".toggle-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    modelType = btn.dataset.model;
+    activeModelLabel.textContent = modelType === "finetuned" ? "fine-tuned" : "base (unmodified)";
+    startSession();
+  });
+});
+
+// ── Start session ─────────────────────────────────────────────────────────────
+async function startSession() {
+  clearChat();
+  ended = false;
+  endedBanner.classList.remove("visible");
+  restartBtn.classList.remove("visible");
+  input.disabled = false; sendBtn.disabled = false;
+
+  try {
+    const res = await fetch(`${API}/session/start`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model_type: modelType }),
+    });
+    const data = await res.json();
+    sessionId = data.session_id;
+    turnCount = 0;
+    sessionLabel.textContent = `session ${sessionId.slice(0,8)}`;
+    appendMessage("ai", data.greeting, 0);
+  } catch (e) {
+    appendMessage("ai", "⚠ Could not connect to backend. Is the server running on port 8000?", 0);
+  }
+}
+
+// ── Send message ──────────────────────────────────────────────────────────────
+async function sendMessage() {
+  const text = input.value.trim();
+  if (!text || ended || !sessionId) return;
+
+  turnCount++;
+  appendMessage("user", text, turnCount);
+  input.value = "";
+  input.style.height = "auto";
+  input.disabled = true; sendBtn.disabled = true;
+  showTyping(true);
+
+  try {
+    const res = await fetch(`${API}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: sessionId, message: text }),
+    });
+    const data = await res.json();
+    showTyping(false);
+    appendMessage("ai", data.reply, data.turn_count);
+
+    if (data.ended) {
+      ended = true;
+      showEnded(data.turn_count, modelType);
+    } else {
+      input.disabled = false; sendBtn.disabled = false;
+      input.focus();
+    }
+  } catch (e) {
+    showTyping(false);
+    appendMessage("ai", "⚠ Error reaching backend.", turnCount);
+    input.disabled = false; sendBtn.disabled = false;
+  }
+}
+
+// ── DOM helpers ───────────────────────────────────────────────────────────────
+function appendMessage(role, text, turn) {
+  const typing = document.getElementById("typing");
+  const div = document.createElement("div");
+  div.className = `msg ${role}`;
+  const label = role === "user" ? `You · turn ${turn}` : `Companion · turn ${turn}`;
+  div.innerHTML = `<div class="turn-label">${label}</div><div class="bubble">${escHtml(text)}</div>`;
+  chatWindow.insertBefore(div, typing);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+function showTyping(on) {
+  typingEl.classList.toggle("visible", on);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+function showEnded(turns, model) {
+  endedBanner.classList.add("visible");
+  document.getElementById("stat-turns").textContent = turns;
+  document.getElementById("stat-model").textContent = model === "finetuned" ? "FT" : "Base";
+  restartBtn.classList.add("visible");
+  input.disabled = true; sendBtn.disabled = true;
+}
+
+function clearChat() {
+  document.querySelectorAll(".msg").forEach(el => el.remove());
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+// ── Auto-resize textarea ──────────────────────────────────────────────────────
+input.addEventListener("input", () => {
+  input.style.height = "auto";
+  input.style.height = Math.min(input.scrollHeight, 140) + "px";
+});
+
+// ── Enter to send ─────────────────────────────────────────────────────────────
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+sendBtn.addEventListener("click", sendMessage);
+restartBtn.addEventListener("click", startSession);
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+startSession();
+</script>
+</body>
+</html>
