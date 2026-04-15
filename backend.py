@@ -1,9 +1,6 @@
 """
 FastAPI Backend — AI Companion (Mock Mode)
 ==========================================
-Works immediately without GPU or model downloads.
-Uses scripted responses to demo the full conversation ending flow.
-Replace generate_reply() with real model calls once fine-tuning is done.
 
 Usage:
     pip install fastapi uvicorn pydantic
